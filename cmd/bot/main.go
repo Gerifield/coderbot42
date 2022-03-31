@@ -6,6 +6,8 @@ import (
 
 	"github.com/gempir/go-twitch-irc/v3"
 
+	"github.com/gerifield/coderbot42/bot"
+	_ "github.com/gerifield/coderbot42/command/kappa"
 	"github.com/gerifield/coderbot42/token"
 )
 
@@ -25,10 +27,7 @@ func main() {
 	}
 
 	client := twitch.NewClient(*botName, "oauth:"+token.AccessToken)
-	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		log.Println(message.Message)
-		client.Say(message.Channel, message.Message)
-	})
+	client.OnPrivateMessage(bot.PrivateMessageHandler(client))
 	client.Join(*channelName)
 
 	log.Println("Connect with client")
