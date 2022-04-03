@@ -7,6 +7,7 @@ import (
 	"github.com/gempir/go-twitch-irc/v3"
 
 	"github.com/gerifield/coderbot42/bot"
+	_ "github.com/gerifield/coderbot42/command/jatek"
 	_ "github.com/gerifield/coderbot42/command/kappa"
 	"github.com/gerifield/coderbot42/token"
 )
