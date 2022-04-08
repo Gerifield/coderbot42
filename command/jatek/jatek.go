@@ -92,6 +92,7 @@ func (l *logic) jatekSorsol(m twitch.PrivateMessage) (string, error) {
 	}
 
 	winner := l.users[int(rnd)]
+	log.Println("Random gen:", rnd, winner, l.users)
 
 	return fmt.Sprintf("Nyertes: %s", winner), nil
 }
