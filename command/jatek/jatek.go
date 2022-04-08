@@ -38,11 +38,26 @@ func (l *logic) jatekHandler(m twitch.PrivateMessage) (string, error) {
 
 	usr := m.User.DisplayName
 
-	if inUsers(l.users, usr) {
-		return fmt.Sprintf("%s mar regisztralt.", usr), nil
+	// Subscriberek
+	if isSubscirber(m) {
+		// Mar van 2 reg, off
+		if numOfRegs(l.users, usr) == 2 {
+			return fmt.Sprintf("%s mar regisztralt.", usr), nil
+		}
+
+		// Beallitani 2 regre
+		setRegs(&l.users, usr, 2)
+	} else {
+
+		// Nem sub
+		if numOfRegs(l.users, usr) == 1 {
+			return fmt.Sprintf("%s mar regisztralt.", usr), nil
+		}
+
+		// Beallitani 1-re
+		setRegs(&l.users, usr, 1)
 	}
 
-	l.users = append(l.users, usr)
 	log.Println("User:", l.users)
 	return fmt.Sprintf("%s regisztralt a jatekra!", usr), nil
 }
@@ -92,14 +107,22 @@ func genRandNum(max int64) (int64, error) {
 	return n.Int64(), nil
 }
 
-func inUsers(users []string, usr string) bool {
+func numOfRegs(users []string, usr string) int {
+	usr = strings.ToLower(usr)
+	regs := 0
 	for _, u := range users {
-		if u == usr {
-			return true
+		if strings.ToLower(u) == usr {
+			regs = regs + 1
 		}
 	}
 
-	return false
+	return regs
+}
+
+func setRegs(users *[]string, usr string, desiredReg int) {
+	for numOfRegs(*users, usr) < desiredReg {
+		*users = append(*users, usr)
+	}
 }
 
 func isAdmin(nick string) bool {
@@ -107,6 +130,22 @@ func isAdmin(nick string) bool {
 
 	for _, a := range admins {
 		if strings.ToLower(a) == strings.ToLower(nick) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isSubscirber(m twitch.PrivateMessage) bool {
+	for _, i := range strings.Split(m.Tags["badge-info"], ",") {
+		parts := strings.Split(i, "/")
+
+		if len(parts) < 1 {
+			continue
+		}
+
+		if parts[0] == "subscriber" {
 			return true
 		}
 	}

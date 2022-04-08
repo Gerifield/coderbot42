@@ -21,7 +21,7 @@ func Register(cmd string, h MessageHandler) {
 
 func PrivateMessageHandler(c sayer) func(msg twitch.PrivateMessage) {
 	return func(msg twitch.PrivateMessage) {
-		log.Println("msg:", msg)
+		printInfo(msg)
 
 		if !strings.HasPrefix(msg.Message, "!") {
 			return
@@ -45,4 +45,8 @@ func PrivateMessageHandler(c sayer) func(msg twitch.PrivateMessage) {
 			}
 		}
 	}
+}
+
+func printInfo(m twitch.PrivateMessage) {
+	log.Println("msg:", m.Message, m.User, m.Tags)
 }
