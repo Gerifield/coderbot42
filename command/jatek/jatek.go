@@ -58,7 +58,7 @@ func (l *logic) jatekHandler(m twitch.PrivateMessage) (string, error) {
 		setRegs(&l.users, usr, 1)
 	}
 
-	log.Println("User:", l.users)
+	log.Println("User:", l.users, len(l.users))
 	return fmt.Sprintf("%s regisztralt a jatekra!", usr), nil
 }
 
