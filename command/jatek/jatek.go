@@ -6,32 +6,42 @@ import (
 	"log"
 	"math/big"
 	"strings"
-
-	"github.com/gerifield/coderbot42/bot"
+	"time"
 
 	"github.com/gempir/go-twitch-irc/v3"
 )
 
-func init() {
-	l := newLogic()
-	bot.Register("!jatek", l.jatekHandler)
-	bot.Register("!jatek-start", l.jatekStart)
-	bot.Register("!jatek-stop", l.jatekStop)
-	bot.Register("!jatek-sorsol", l.jatekSorsol)
+var activeMessages = []string{
+	"Regisztralj a jatekra, a kovetkezo paranccsal: !jatek",
+	"Ne feledd hasznalni a kovetkezo parancsot: !jatek",
+	"Gyere jatszani a !jatek paranccsal!",
 }
 
 type logic struct {
 	active bool
 	users  []string
+	ticker *time.Ticker
 }
 
-func newLogic() *logic {
-	return &logic{
-		users: make([]string, 0),
+func NewLogic(c *twitch.Client, channel string) *logic {
+	l := &logic{
+		users:  make([]string, 0),
+		ticker: time.NewTicker(15 * time.Minute),
 	}
+
+	go func() {
+		for range l.ticker.C {
+			if l.active {
+				rnd, _ := genRandNum(int64(len(activeMessages)))
+				c.Say(channel, activeMessages[rnd])
+			}
+		}
+	}()
+
+	return l
 }
 
-func (l *logic) jatekHandler(m twitch.PrivateMessage) (string, error) {
+func (l *logic) JatekHandler(m twitch.PrivateMessage) (string, error) {
 	if !l.active {
 		return "", nil
 	}
@@ -62,7 +72,7 @@ func (l *logic) jatekHandler(m twitch.PrivateMessage) (string, error) {
 	return fmt.Sprintf("%s regisztralt a jatekra!", usr), nil
 }
 
-func (l *logic) jatekStart(m twitch.PrivateMessage) (string, error) {
+func (l *logic) JatekStart(m twitch.PrivateMessage) (string, error) {
 	if !isAdmin(m.User.Name) {
 		return "", nil
 	}
@@ -72,7 +82,7 @@ func (l *logic) jatekStart(m twitch.PrivateMessage) (string, error) {
 	return "Elindult a jatek!", nil
 }
 
-func (l *logic) jatekStop(m twitch.PrivateMessage) (string, error) {
+func (l *logic) JatekStop(m twitch.PrivateMessage) (string, error) {
 	if !isAdmin(m.User.Name) {
 		return "", nil
 	}
@@ -81,9 +91,13 @@ func (l *logic) jatekStop(m twitch.PrivateMessage) (string, error) {
 	return "Vege a jateknak!", nil
 }
 
-func (l *logic) jatekSorsol(m twitch.PrivateMessage) (string, error) {
+func (l *logic) JatekSorsol(m twitch.PrivateMessage) (string, error) {
 	if !isAdmin(m.User.Name) {
 		return "", nil
+	}
+
+	if len(l.users) == 0 {
+		return "Nincs regisztralt jatekos", nil
 	}
 
 	rnd, err := genRandNum(int64(len(l.users)))

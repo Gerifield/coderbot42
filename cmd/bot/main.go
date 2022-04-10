@@ -7,7 +7,7 @@ import (
 	"github.com/gempir/go-twitch-irc/v3"
 
 	"github.com/gerifield/coderbot42/bot"
-	_ "github.com/gerifield/coderbot42/command/jatek"
+	"github.com/gerifield/coderbot42/command/jatek"
 	_ "github.com/gerifield/coderbot42/command/kappa"
 	"github.com/gerifield/coderbot42/token"
 )
@@ -28,6 +28,13 @@ func main() {
 	}
 
 	client := twitch.NewClient(*botName, "oauth:"+token.AccessToken)
+
+	l := jatek.NewLogic(client, *channelName)
+	bot.Register("!jatek", l.JatekHandler)
+	bot.Register("!jatek-start", l.JatekStart)
+	bot.Register("!jatek-stop", l.JatekStop)
+	bot.Register("!jatek-sorsol", l.JatekSorsol)
+
 	client.OnPrivateMessage(bot.PrivateMessageHandler(client))
 	client.Join(*channelName)
 
