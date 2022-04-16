@@ -17,6 +17,8 @@ func main() {
 	botName := flag.String("botName", "CoderBot42", "Bot name")
 	clientID := flag.String("clientID", "", "Twitch App ClientID")
 	clientSecret := flag.String("clientSecret", "", "Twitch App clientSecret")
+
+	jatekosFile := flag.String("jatekosFile", "jatekosok.json", "Jatekosok listajanak tarolasi helye")
 	flag.Parse()
 
 	tl := token.New(*clientID, *clientSecret)
@@ -29,7 +31,11 @@ func main() {
 
 	client := twitch.NewClient(*botName, "oauth:"+token.AccessToken)
 
-	l := jatek.NewLogic(client, *channelName)
+	l, err := jatek.NewLogic(client, *channelName, *jatekosFile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	bot.Register("!jatek", l.JatekHandler)
 	bot.Register("!jatek-start", l.JatekStart)
 	bot.Register("!jatek-stop", l.JatekStop)

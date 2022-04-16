@@ -2,14 +2,23 @@ package jatek
 
 import (
 	"crypto/rand"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/big"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gempir/go-twitch-irc/v3"
 )
+
+type usersFile struct {
+	Users []string `json:"users"`
+}
 
 var activeMessages = []string{
 	"Regisztralj a jatekra, a kovetkezo paranccsal: !jatek",
@@ -19,14 +28,21 @@ var activeMessages = []string{
 
 type logic struct {
 	active bool
-	users  []string
 	ticker *time.Ticker
+
+	usersLock *sync.Mutex
+	users     []string
 }
 
-func NewLogic(c *twitch.Client, channel string) *logic {
+func NewLogic(c *twitch.Client, channel string, jatekosFile string) (*logic, error) {
 	l := &logic{
-		users:  make([]string, 0),
-		ticker: time.NewTicker(15 * time.Minute),
+		usersLock: &sync.Mutex{},
+		users:     make([]string, 0),
+		ticker:    time.NewTicker(15 * time.Minute),
+	}
+
+	if err := l.fileLoad(jatekosFile); err != nil {
+		return l, err
 	}
 
 	go func() {
@@ -38,7 +54,49 @@ func NewLogic(c *twitch.Client, channel string) *logic {
 		}
 	}()
 
-	return l
+	fileSaver := time.NewTicker(5 * time.Second)
+	go func() {
+		for range fileSaver.C {
+			_ = l.fileSave(jatekosFile)
+		}
+	}()
+
+	return l, nil
+}
+
+func (l *logic) fileSave(file string) error {
+	l.usersLock.Lock()
+	defer l.usersLock.Unlock()
+
+	b, _ := json.Marshal(usersFile{
+		Users: l.users,
+	})
+
+	return ioutil.WriteFile(file, b, 0644)
+}
+
+func (l *logic) fileLoad(file string) error {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+
+		return err
+	}
+
+	var content usersFile
+	err = json.Unmarshal(b, &content)
+	if err != nil {
+		return err
+	}
+
+	l.usersLock.Lock()
+	l.users = content.Users
+	log.Printf("%d users loaded from file: %v", len(l.users), l.users)
+	l.usersLock.Unlock()
+
+	return nil
 }
 
 func (l *logic) JatekHandler(m twitch.PrivateMessage) (string, error) {
@@ -47,6 +105,9 @@ func (l *logic) JatekHandler(m twitch.PrivateMessage) (string, error) {
 	}
 
 	usr := m.User.DisplayName
+
+	l.usersLock.Lock()
+	defer l.usersLock.Unlock()
 
 	// Subscriberek
 	if isSubscirber(m) {
@@ -78,7 +139,9 @@ func (l *logic) JatekStart(m twitch.PrivateMessage) (string, error) {
 	}
 
 	l.active = true
+	l.usersLock.Lock()
 	l.users = make([]string, 0)
+	l.usersLock.Unlock()
 	return "Elindult a jatek!", nil
 }
 
@@ -96,6 +159,9 @@ func (l *logic) JatekSorsol(m twitch.PrivateMessage) (string, error) {
 		return "", nil
 	}
 
+	l.usersLock.Lock()
+	defer l.usersLock.Unlock()
+
 	if len(l.users) == 0 {
 		return "Nincs regisztralt jatekos", nil
 	}
@@ -108,7 +174,7 @@ func (l *logic) JatekSorsol(m twitch.PrivateMessage) (string, error) {
 	winner := l.users[int(rnd)]
 	log.Println("Random gen:", rnd, winner, l.users)
 
-	return fmt.Sprintf("Nyertes: %s", winner), nil
+	return fmt.Sprintf("Nyertes: @%s", winner), nil
 }
 
 func genRandNum(max int64) (int64, error) {
