@@ -41,7 +41,11 @@ func main() {
 	bot.Register("!jatek-stop", l.JatekStop)
 	bot.Register("!jatek-sorsol", l.JatekSorsol)
 
-	client.OnPrivateMessage(bot.PrivateMessageHandler(client))
+	commandHandler := bot.PrivateMessageHandler(client)
+	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
+		l.CheerHandler(m)
+		commandHandler(m)
+	})
 	client.Join(*channelName)
 
 	log.Println("Connect with client")

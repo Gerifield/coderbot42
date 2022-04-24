@@ -99,6 +99,38 @@ func (l *logic) fileLoad(file string) error {
 	return nil
 }
 
+func (l *logic) CheerHandler(m twitch.PrivateMessage) {
+	if m.Bits == 0 {
+		return
+	}
+
+	fmt.Println("Cheer:", m.Bits)
+
+	if !l.active {
+		return
+	}
+
+	usr := m.User.DisplayName
+	fmt.Println("Cheer, game active", usr)
+
+	if m.Bits >= 50 {
+		fmt.Println("Cheeeeeer", m)
+
+		l.usersLock.Lock()
+		defer l.usersLock.Unlock()
+
+		// Mar van 2 reg, off
+		if numOfRegs(l.users, usr) == 2 {
+			return
+		}
+
+		// Beallitani 2 regre
+		setRegs(&l.users, usr, 2)
+
+		log.Println("Cheer, User:", l.users, len(l.users))
+	}
+}
+
 func (l *logic) JatekHandler(m twitch.PrivateMessage) (string, error) {
 	if !l.active {
 		return "", nil
