@@ -27,8 +27,9 @@ var activeMessages = []string{
 }
 
 type logic struct {
-	active bool
-	ticker *time.Ticker
+	twitchClient *twitch.Client
+	active       bool
+	ticker       *time.Ticker
 
 	usersLock *sync.Mutex
 	users     []string
@@ -36,9 +37,10 @@ type logic struct {
 
 func NewLogic(c *twitch.Client, channel string, jatekosFile string) (*logic, error) {
 	l := &logic{
-		usersLock: &sync.Mutex{},
-		users:     make([]string, 0),
-		ticker:    time.NewTicker(15 * time.Minute),
+		twitchClient: c,
+		usersLock:    &sync.Mutex{},
+		users:        make([]string, 0),
+		ticker:       time.NewTicker(15 * time.Minute),
 	}
 
 	if err := l.fileLoad(jatekosFile); err != nil {
@@ -104,18 +106,18 @@ func (l *logic) CheerHandler(m twitch.PrivateMessage) {
 		return
 	}
 
-	fmt.Println("Cheer:", m.Bits)
+	if m.Bits >= 600 && !l.active {
+		resp, _ := l.JatekStart(m)
+		l.twitchClient.Say(m.Channel, resp)
+	}
 
 	if !l.active {
 		return
 	}
 
 	usr := m.User.DisplayName
-	fmt.Println("Cheer, game active", usr)
 
 	if m.Bits >= 50 {
-		fmt.Println("Cheeeeeer", m)
-
 		l.usersLock.Lock()
 		defer l.usersLock.Unlock()
 
