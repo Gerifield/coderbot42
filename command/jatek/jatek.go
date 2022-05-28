@@ -27,20 +27,22 @@ var activeMessages = []string{
 }
 
 type logic struct {
-	twitchClient *twitch.Client
-	active       bool
-	ticker       *time.Ticker
+	say    sayer
+	active bool
+	ticker *time.Ticker
 
 	usersLock *sync.Mutex
 	users     []string
 }
 
-func NewLogic(c *twitch.Client, channel string, jatekosFile string) (*logic, error) {
+type sayer func(string)
+
+func NewLogic(say sayer, jatekosFile string) (*logic, error) {
 	l := &logic{
-		twitchClient: c,
-		usersLock:    &sync.Mutex{},
-		users:        make([]string, 0),
-		ticker:       time.NewTicker(15 * time.Minute),
+		say:       say,
+		usersLock: &sync.Mutex{},
+		users:     make([]string, 0),
+		ticker:    time.NewTicker(15 * time.Minute),
 	}
 
 	if err := l.fileLoad(jatekosFile); err != nil {
@@ -51,7 +53,7 @@ func NewLogic(c *twitch.Client, channel string, jatekosFile string) (*logic, err
 		for range l.ticker.C {
 			if l.active {
 				rnd, _ := genRandNum(int64(len(activeMessages)))
-				c.Say(channel, activeMessages[rnd])
+				say(activeMessages[rnd])
 			}
 		}
 	}()
@@ -108,7 +110,7 @@ func (l *logic) CheerHandler(m twitch.PrivateMessage) {
 
 	if m.Bits >= 600 && !l.active {
 		resp, _ := l.JatekStart(m)
-		l.twitchClient.Say(m.Channel, resp)
+		l.say(resp)
 	}
 
 	if !l.active {
@@ -244,7 +246,7 @@ func isAdmin(nick string) bool {
 	admins := []string{"Bate81", "gerifield"}
 
 	for _, a := range admins {
-		if strings.ToLower(a) == strings.ToLower(nick) {
+		if strings.EqualFold(a, nick) {
 			return true
 		}
 	}

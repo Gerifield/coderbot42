@@ -28,7 +28,7 @@ func New(clientID, clientSecret string) *Logic {
 
 // Get .
 func (l *Logic) Get() (*oauth2.Token, error) {
-	scopes := []string{"chat:read", "chat:edit"}
+	scopes := []string{"chat:read", "chat:edit", "channel_editor"}
 
 	// Setup OAuth2 configuration
 	config, err := auth.NewUserAuth(l.clientID, l.clientSecret, "http://localhost:8080", &scopes)

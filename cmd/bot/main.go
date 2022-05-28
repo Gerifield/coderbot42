@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"log"
+	"strings"
 
 	"github.com/gempir/go-twitch-irc/v3"
 
 	"github.com/gerifield/coderbot42/bot"
+	"github.com/gerifield/coderbot42/command/autoraid"
 	"github.com/gerifield/coderbot42/command/jatek"
 	_ "github.com/gerifield/coderbot42/command/kappa"
 	"github.com/gerifield/coderbot42/token"
@@ -19,6 +21,7 @@ func main() {
 	clientSecret := flag.String("clientSecret", "", "Twitch App clientSecret")
 
 	jatekosFile := flag.String("jatekosFile", "jatekosok.json", "Jatekosok listajanak tarolasi helye")
+	channelsName := flag.String("channels", "moakaash,gibbonrike,streaminks,marinemammalrescue", "Twitch channels name to check")
 	flag.Parse()
 
 	tl := token.New(*clientID, *clientSecret)
@@ -31,7 +34,11 @@ func main() {
 
 	client := twitch.NewClient(*botName, "oauth:"+token.AccessToken)
 
-	l, err := jatek.NewLogic(client, *channelName, *jatekosFile)
+	sayFn := func(msg string) {
+		client.Say(*channelName, msg)
+	}
+
+	l, err := jatek.NewLogic(sayFn, *jatekosFile)
 	if err != nil {
 		log.Println(err)
 		return
@@ -40,6 +47,13 @@ func main() {
 	bot.Register("!jatek-start", l.JatekStart)
 	bot.Register("!jatek-stop", l.JatekStop)
 	bot.Register("!jatek-sorsol", l.JatekSorsol)
+
+	autoRaider, err := autoraid.New(sayFn, *clientID, token.AccessToken, strings.Split(*channelsName, ","))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	bot.Register("!autoraid", autoRaider.Handler)
 
 	commandHandler := bot.PrivateMessageHandler(client)
 	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
