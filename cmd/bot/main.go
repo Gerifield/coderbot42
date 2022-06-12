@@ -8,9 +8,8 @@ import (
 	"github.com/gempir/go-twitch-irc/v3"
 
 	"github.com/gerifield/coderbot42/bot"
+	"github.com/gerifield/coderbot42/command/automessage"
 	"github.com/gerifield/coderbot42/command/autoraid"
-	"github.com/gerifield/coderbot42/command/jatek"
-	_ "github.com/gerifield/coderbot42/command/kappa"
 	"github.com/gerifield/coderbot42/token"
 )
 
@@ -20,8 +19,7 @@ func main() {
 	clientID := flag.String("clientID", "", "Twitch App ClientID")
 	clientSecret := flag.String("clientSecret", "", "Twitch App clientSecret")
 
-	jatekosFile := flag.String("jatekosFile", "jatekosok.json", "Jatekosok listajanak tarolasi helye")
-	channelsName := flag.String("channels", "moakaash,gibbonrike,streaminks,marinemammalrescue", "Twitch channels name to check")
+	raidChannels := flag.String("raidChannels", "moakaash,gibbonrike,streaminks,marinemammalrescue", "Twitch channels name to check")
 	flag.Parse()
 
 	tl := token.New(*clientID, *clientSecret)
@@ -38,26 +36,26 @@ func main() {
 		client.Say(*channelName, msg)
 	}
 
-	l, err := jatek.NewLogic(sayFn, *jatekosFile)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	bot.Register("!jatek", l.JatekHandler)
-	bot.Register("!jatek-start", l.JatekStart)
-	bot.Register("!jatek-stop", l.JatekStop)
-	bot.Register("!jatek-sorsol", l.JatekSorsol)
-
-	autoRaider, err := autoraid.New(sayFn, *clientID, token.AccessToken, strings.Split(*channelsName, ","))
+	autoRaider, err := autoraid.New(sayFn, *clientID, token.AccessToken, strings.Split(*raidChannels, ","))
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	bot.Register("!autoraid", autoRaider.Handler)
 
+	messager := automessage.New(sayFn)
+	defer messager.Stop()
+
+	client.OnConnect(func() {
+		messager.Start()
+	})
+
+	client.OnUserJoinMessage(func(message twitch.UserJoinMessage) {
+		log.Println(message)
+	})
+
 	commandHandler := bot.PrivateMessageHandler(client)
 	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
-		l.CheerHandler(m)
 		commandHandler(m)
 	})
 	client.Join(*channelName)
