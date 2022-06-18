@@ -3,26 +3,27 @@ package main
 import (
 	"flag"
 	"log"
-	"strings"
 
 	"github.com/gempir/go-twitch-irc/v3"
 
 	"github.com/gerifield/coderbot42/bot"
 	"github.com/gerifield/coderbot42/command/automessage"
 	"github.com/gerifield/coderbot42/command/autoraid"
+	"github.com/gerifield/coderbot42/config"
 	"github.com/gerifield/coderbot42/token"
 )
 
 func main() {
-	channelName := flag.String("channel", "gerifield", "Twitch channel name")
-	botName := flag.String("botName", "CoderBot42", "Bot name")
-	clientID := flag.String("clientID", "", "Twitch App ClientID")
-	clientSecret := flag.String("clientSecret", "", "Twitch App clientSecret")
-
-	raidChannels := flag.String("raidChannels", "moakaash,gibbonrike,streaminks,marinemammalrescue", "Twitch channels name to check")
+	configFile := flag.String("config", "config.json", "Config file")
 	flag.Parse()
 
-	tl := token.New(*clientID, *clientSecret)
+	conf, err := config.Load(*configFile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	tl := token.New(conf.Secret.ClientID, conf.Secret.ClientSecret)
 	log.Println("Fetching token")
 	token, err := tl.Get()
 	if err != nil {
@@ -30,20 +31,20 @@ func main() {
 		return
 	}
 
-	client := twitch.NewClient(*botName, "oauth:"+token.AccessToken)
+	client := twitch.NewClient(conf.BotName, "oauth:"+token.AccessToken)
 
 	sayFn := func(msg string) {
-		client.Say(*channelName, msg)
+		client.Say(conf.Channel, msg)
 	}
 
-	autoRaider, err := autoraid.New(sayFn, *clientID, token.AccessToken, strings.Split(*raidChannels, ","))
+	autoRaider, err := autoraid.New(sayFn, conf.Secret.ClientID, token.AccessToken, conf.RaidChannels)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	bot.Register("!autoraid", autoRaider.Handler)
 
-	messager := automessage.New(sayFn)
+	messager := automessage.New(sayFn, conf.AutoMessages)
 	defer messager.Stop()
 
 	client.OnConnect(func() {
@@ -58,7 +59,7 @@ func main() {
 	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
 		commandHandler(m)
 	})
-	client.Join(*channelName)
+	client.Join(conf.Channel)
 
 	log.Println("Connect with client")
 	err = client.Connect()

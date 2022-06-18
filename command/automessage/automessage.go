@@ -5,18 +5,18 @@ import (
 	"time"
 )
 
-var messages = []string{}
-
 type sayer func(string)
 
 type Logic struct {
-	say    sayer
-	ticker *time.Ticker
+	say      sayer
+	ticker   *time.Ticker
+	messages []string
 }
 
-func New(say sayer) *Logic {
+func New(say sayer, messages []string) *Logic {
 	return &Logic{
-		say: say,
+		say:      say,
+		messages: messages,
 	}
 }
 
@@ -25,11 +25,11 @@ func (l *Logic) Start() {
 
 	go func() {
 		for range l.ticker.C {
-			if len(messages) == 0 {
+			if len(l.messages) == 0 {
 				continue
 			}
 
-			l.say(messages[rand.Intn(len(messages))])
+			l.say(l.messages[rand.Intn(len(l.messages))])
 		}
 	}()
 }

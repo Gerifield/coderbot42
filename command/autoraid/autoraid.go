@@ -2,7 +2,6 @@ package autoraid
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -42,7 +41,7 @@ const streamsURL = "https://api.twitch.tv/helix/streams"
 // New .
 func New(say sayer, clientID string, accessToken string, channels []string) (*Logic, error) {
 	if len(channels) == 0 {
-		return nil, errors.New("no channel set for raiding")
+		return nil, nil
 	}
 
 	req, err := http.NewRequest(http.MethodGet, streamsURL, nil)
@@ -68,6 +67,10 @@ func New(say sayer, clientID string, accessToken string, channels []string) (*Lo
 func (l *Logic) Handler(m twitch.PrivateMessage) (string, error) {
 	if !isAdmin(m.User.Name) {
 		return "", nil
+	}
+
+	if l == nil {
+		return "No channels set for raid :(", nil
 	}
 
 	streamInfos, err := l.fetchChannels()
