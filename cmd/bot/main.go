@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/gempir/go-twitch-irc/v3"
@@ -68,6 +69,8 @@ func main() {
 	commandHandler := bot.PrivateMessageHandler(client)
 	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
 		commandHandler(m)
+		
+		overlayLogic.Send(fmt.Sprintf("%s: %s", m.User.DisplayName, m.Message))
 	})
 	client.Join(conf.Channel)
 
