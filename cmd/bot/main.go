@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/gerifield/coderbot42/command/automessage"
 	"github.com/gerifield/coderbot42/command/autoraid"
 	"github.com/gerifield/coderbot42/config"
+	"github.com/gerifield/coderbot42/overlay"
 	"github.com/gerifield/coderbot42/token"
 )
 
@@ -46,6 +48,14 @@ func main() {
 
 	messager := automessage.New(sayFn, conf.AutoMessages)
 	defer messager.Stop()
+
+	overlayLogic, err := overlay.New(conf.Server)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	go overlayLogic.Start()
+	defer overlayLogic.Stop(context.Background())
 
 	client.OnConnect(func() {
 		messager.Start()

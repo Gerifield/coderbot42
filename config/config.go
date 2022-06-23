@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+type Server struct {
+	Addr      string `json:"addr"`
+	Token     string `json:"token"`
+	StaticDir string `json:"staticDir"`
+}
+
 type Config struct {
 	Channel string `json:"channel"`
 	BotName string `json:"botName"`
@@ -13,6 +19,8 @@ type Config struct {
 		ClientID     string `json:"clientID"`
 		ClientSecret string `json:"clientSecret"`
 	} `json:"secret"`
+
+	Server Server `json:"server"`
 
 	RaidChannels []string `json:"raidChannels"`
 	AutoMessages []string `json:"autoMessages"`

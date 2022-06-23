@@ -1,1 +1,1 @@
-{"channel":"gerifield","botName":"CoderBot42", "secret":{"clientID":"","clientSecret":""},"raidChannels":[],"autoMessages":[]}
+{"channel":"gerifield","botName":"CoderBot42", "secret":{"clientID":"","clientSecret":""},"server":{"addr":":8080","token":"","staticDir":"./static"},"raidChannels":[],"autoMessages":[]}

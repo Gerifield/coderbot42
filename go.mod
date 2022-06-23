@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/gempir/go-twitch-irc/v3 v3.0.0
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/kelr/gundyr v0.2.8
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 )
