@@ -10,12 +10,13 @@ import (
 	"github.com/gerifield/coderbot42/bot"
 	"github.com/gerifield/coderbot42/command/autoraid"
 	"github.com/gerifield/coderbot42/command/jatek"
-	_ "github.com/gerifield/coderbot42/command/kappa"
+
+	//_ "github.com/gerifield/coderbot42/command/kappa"
 	"github.com/gerifield/coderbot42/token"
 )
 
 func main() {
-	channelName := flag.String("channel", "gerifield", "Twitch channel name")
+	channelName := flag.String("channel", "bate81", "Twitch channel name")
 	botName := flag.String("botName", "CoderBot42", "Bot name")
 	clientID := flag.String("clientID", "", "Twitch App ClientID")
 	clientSecret := flag.String("clientSecret", "", "Twitch App clientSecret")
@@ -54,6 +55,12 @@ func main() {
 		return
 	}
 	bot.Register("!autoraid", autoRaider.Handler)
+
+	client.OnUserJoinMessage(func(message twitch.UserJoinMessage) {
+		log.Println("[JOIN]", message)
+		sayFn("Hello there!")
+		//client.Say(*channelName, "Hello!")
+	})
 
 	commandHandler := bot.PrivateMessageHandler(client)
 	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
