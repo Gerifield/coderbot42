@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 
 	"github.com/gempir/go-twitch-irc/v3"
@@ -12,6 +11,7 @@ import (
 	"github.com/gerifield/coderbot42/command/automessage"
 	"github.com/gerifield/coderbot42/command/autoraid"
 	"github.com/gerifield/coderbot42/config"
+	"github.com/gerifield/coderbot42/event"
 	"github.com/gerifield/coderbot42/overlay"
 	"github.com/gerifield/coderbot42/token"
 )
@@ -69,8 +69,8 @@ func main() {
 	commandHandler := bot.PrivateMessageHandler(client)
 	client.OnPrivateMessage(func(m twitch.PrivateMessage) {
 		commandHandler(m)
-		
-		overlayLogic.Send(fmt.Sprintf("%s: %s", m.User.DisplayName, m.Message))
+
+		overlayLogic.Send(event.NewMessage(m.User.DisplayName, m.Message))
 	})
 	client.Join(conf.Channel)
 

@@ -16,10 +16,19 @@ func (l *Logic) routes() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
-	r.Use(middleware.Auth(l.token))
 
-	r.Handle("/overlay/*", http.StripPrefix("/overlay", http.FileServer(http.Dir(l.staticDir))))
-	r.Get("/websocket", l.websocketHandler)
+	// Require auth
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.Auth(l.token))
+
+		r.Get("/overlay", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, "static/index.html")
+		})
+
+		r.Get("/websocket", l.websocketHandler)
+	})
+
+	r.Handle("/asset/*", http.StripPrefix("/asset", http.FileServer(http.Dir(l.staticDir))))
 
 	return r
 }
