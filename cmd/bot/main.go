@@ -27,13 +27,13 @@ func main() {
 
 	tl := token.New(*clientID, *clientSecret)
 	log.Println("Fetching token")
-	token, err := tl.Get()
+	accToken, err := tl.Get()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	client := twitch.NewClient(*botName, "oauth:"+token.AccessToken)
+	client := twitch.NewClient(*botName, "oauth:"+accToken.AccessToken)
 
 	sayFn := func(msg string) {
 		client.Say(*channelName, msg)
@@ -49,7 +49,7 @@ func main() {
 	bot.Register("!jatek-stop", l.JatekStop)
 	bot.Register("!jatek-sorsol", l.JatekSorsol)
 
-	autoRaider, err := autoraid.New(sayFn, *clientID, token.AccessToken, strings.Split(*channelsName, ","))
+	autoRaider, err := autoraid.New(sayFn, *clientID, accToken.AccessToken, strings.Split(*channelsName, ","))
 	if err != nil {
 		log.Println(err)
 		return
