@@ -203,9 +203,15 @@ func (l *logic) JatekStart(m twitch.PrivateMessage) (string, error) {
 	}
 
 	l.active = true
+
 	l.usersLock.Lock()
 	l.users = make([]string, 0)
 	l.usersLock.Unlock()
+
+	l.cheerSumLock.Lock()
+	l.cheerSum = 0
+	l.cheerSumLock.Unlock()
+
 	return "Elindult a jatek!", nil
 }
 
