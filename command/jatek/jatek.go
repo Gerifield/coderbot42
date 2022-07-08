@@ -17,7 +17,8 @@ import (
 )
 
 type usersFile struct {
-	Users []string `json:"users"`
+	Users    []string `json:"users"`
+	CheerSum int      `json:"cheerSum"`
 }
 
 var activeMessages = []string{
@@ -31,6 +32,9 @@ type logic struct {
 	active bool
 	ticker *time.Ticker
 
+	cheerSumLock *sync.Mutex
+	cheerSum     int
+
 	usersLock *sync.Mutex
 	users     []string
 }
@@ -39,10 +43,11 @@ type sayer func(string)
 
 func NewLogic(say sayer, jatekosFile string) (*logic, error) {
 	l := &logic{
-		say:       say,
-		usersLock: &sync.Mutex{},
-		users:     make([]string, 0),
-		ticker:    time.NewTicker(15 * time.Minute),
+		say:          say,
+		cheerSumLock: &sync.Mutex{},
+		usersLock:    &sync.Mutex{},
+		users:        make([]string, 0),
+		ticker:       time.NewTicker(15 * time.Minute),
 	}
 
 	if err := l.fileLoad(jatekosFile); err != nil {
@@ -69,11 +74,19 @@ func NewLogic(say sayer, jatekosFile string) (*logic, error) {
 }
 
 func (l *logic) fileSave(file string) error {
+	var userList []string
 	l.usersLock.Lock()
-	defer l.usersLock.Unlock()
+	userList = l.users
+	l.usersLock.Unlock()
+
+	var cheerSum int
+	l.cheerSumLock.Lock()
+	cheerSum = l.cheerSum
+	l.cheerSumLock.Unlock()
 
 	b, _ := json.Marshal(usersFile{
-		Users: l.users,
+		Users:    userList,
+		CheerSum: cheerSum,
 	})
 
 	return ioutil.WriteFile(file, b, 0644)
@@ -100,6 +113,11 @@ func (l *logic) fileLoad(file string) error {
 	log.Printf("%d users loaded from file: %v", len(l.users), l.users)
 	l.usersLock.Unlock()
 
+	l.cheerSumLock.Lock()
+	l.cheerSum = content.CheerSum
+	log.Printf("%d cheer sum loaded from file", l.cheerSum)
+	l.cheerSumLock.Unlock()
+
 	return nil
 }
 
@@ -108,9 +126,19 @@ func (l *logic) CheerHandler(m twitch.PrivateMessage) {
 		return
 	}
 
-	if m.Bits >= 600 && !l.active {
-		resp, _ := l.JatekStart(m)
-		l.say(resp)
+	var cheerSum int
+	l.cheerSumLock.Lock()
+	l.cheerSum += m.Bits
+	cheerSum = l.cheerSum
+	l.cheerSumLock.Unlock()
+
+	if cheerSum >= 600 && !l.active {
+		_, err := l.JatekStart(m)
+		if err != nil {
+			l.say("Megvan a cheer goal, elindult a jatek!")
+		} else {
+			log.Println("[ERROR] jatek start fail", err)
+		}
 	}
 
 	if !l.active {
