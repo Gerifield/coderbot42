@@ -132,7 +132,7 @@ func (l *logic) CheerHandler(m twitch.PrivateMessage) {
 	cheerSum = l.cheerSum
 	l.cheerSumLock.Unlock()
 
-	if cheerSum >= 600 && !l.active {
+	if cheerSum >= 500 && !l.active {
 		_, err := l.JatekStart(m)
 		if err != nil {
 			l.say("Megvan a cheer goal, elindult a jatek!")
