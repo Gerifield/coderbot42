@@ -183,7 +183,7 @@ func (l *logic) JatekHandler(m twitch.PrivateMessage) (string, error) {
 	} else {
 
 		// Nem sub
-		if numOfRegs(l.users, usr) == 1 {
+		if numOfRegs(l.users, usr) > 1 {
 			return fmt.Sprintf("%s mar regisztralt.", usr), nil
 		}
 
