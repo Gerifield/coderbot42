@@ -17,6 +17,7 @@ import (
 )
 
 type usersFile struct {
+	Active   bool     `json:"active"`
 	Users    []string `json:"users"`
 	CheerSum int      `json:"cheerSum"`
 }
@@ -85,6 +86,7 @@ func (l *logic) fileSave(file string) error {
 	l.cheerSumLock.Unlock()
 
 	b, _ := json.Marshal(usersFile{
+		Active:   l.active,
 		Users:    userList,
 		CheerSum: cheerSum,
 	})
@@ -107,6 +109,8 @@ func (l *logic) fileLoad(file string) error {
 	if err != nil {
 		return err
 	}
+
+	l.active = content.Active
 
 	l.usersLock.Lock()
 	l.users = content.Users
